@@ -83,42 +83,46 @@ class Manipulator:
         print(self.lever_2_end)
         print(self.angle_1, self.angle_2)
         
-    def draw_top_view(self):
-        """Draw top view with grid and angles."""
-        plt.figure(figsize=(6, 6))
-        plt.title("Top View (Horizontal Projection)")
-        plt.grid(True)
-        
-        # Draw levers in top view (based on angle 0)
+    def draw_all_views(self):
+        fig, axs = plt.subplots(1, 3, figsize=(15, 5))
+
+        # Top View
         top_view_lever1_length = self.lever_1_end[0] - 0
         top_view_lever2_length = self.lever_2_end[0] - 0
-        max_range_on_that_height = math.cos(self.angle_0) * top_view_lever2_length  #circle that show max manipulator range ot that height
-        xs = [0, math.cos(self.angle_0) * top_view_lever1_length, math.cos(self.angle_0) * top_view_lever2_length]
-        ys = [0, math.sin(self.angle_0) * top_view_lever1_length, math.sin(self.angle_0) * top_view_lever2_length]
-        plt.plot(xs, ys, marker='o')
-        plt.show()
+        max_range_on_that_height = math.cos(self.angle_0) * (self.length_1 + self.length_2)  #circle that show max manipulator range ot that
+        print("Max range of manipulator on that height: ", max_range_on_that_height)
+        top_xs = [0, math.cos(self.angle_0) * top_view_lever1_length, math.cos(self.angle_0) * top_view_lever2_length]
+        top_ys = [0, math.sin(self.angle_0) * top_view_lever1_length, math.sin(self.angle_0) * top_view_lever2_length]
         
-    def draw_front_view(self):
-        """Draw front view with grid and angles."""
-        plt.figure(figsize=(6, 6))
-        plt.title("Side View")
-        plt.grid(True)
+        axs[0].set_title("Top View (Horizontal Projection)")
+        axs[0].grid(True)
+        axs[0].set_xlabel("X-axis")
+        axs[0].set_ylabel("Y-axis")
+        circle = plt.Circle((0, 0), max_range_on_that_height, color='red', fill=False)
+        axs[0].add_artist(circle)
+        axs[0].plot(top_xs, top_ys, marker='o')
 
-        xs = [0, self.lever_1_end[0] * math.cos(self.angle_0), self.lever_2_end[0] * math.cos(self.angle_0)]
-        ys = [0, self.lever_1_end[1], self.lever_2_end[1]]
-        plt.plot(xs, ys, marker='o')
-        plt.show()
-        
-    def draw_side_view(self):
-        """Draw top view with grid and angles."""
-        plt.figure(figsize=(6, 6))
-        plt.title("Side View")
-        plt.grid(True)
+
+        # Side View
+        axs[1].set_title("Side View")
+        axs[1].grid(True)
+        axs[1].set_xlabel("X-axis")
+        axs[1].set_ylabel("Y-axis")
+        side_xs = [0, self.lever_1_end[0], self.lever_2_end[0]]
+        side_ys = [0, self.lever_1_end[1], self.lever_2_end[1]]
+        axs[1].plot(side_xs, side_ys, marker='o')
         
 
-        xs = [0, self.lever_1_end[0], self.lever_2_end[0]]
-        ys = [0, self.lever_1_end[1], self.lever_2_end[1]]
-        plt.plot(xs, ys, marker='o')
+        # Front View
+        axs[2].set_title("Front View")
+        axs[2].grid(True)
+        axs[2].set_xlabel("X-axis")
+        axs[2].set_ylabel("Y-axis")
+        front_xs = [0, self.lever_1_end[0] * math.cos(self.angle_0), self.lever_2_end[0] * math.cos(self.angle_0)]
+        front_ys = [0, self.lever_1_end[1], self.lever_2_end[1]]
+        axs[2].plot(front_xs, front_ys, marker='o')
+
+        plt.tight_layout()
         plt.show()
 
 
@@ -155,4 +159,4 @@ manipulator = Manipulator(manipulator_parts)
 # print(manipulator.back_kinematic(40, 70))
 manipulator.go_to_destination(destination)
 manipulator.print_current_state()
-manipulator.draw_front_view()
+manipulator.draw_all_views()

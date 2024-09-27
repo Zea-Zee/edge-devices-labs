@@ -1,17 +1,19 @@
+from matplotlib import pyplot as plt
 import math
 
 
 class Manipulator:
     def __init__(self, devices) -> None:
         self.devices = devices
-        self.nose_coordinates = None
-        self.length_1 = self.devices[1]['length']
-        self.length_2 = self.devices[2]['length']
-        self.angle_0 = None
-        self.angle_1 = self.devices[1]['rotation_boundaries'][0]
-        self.angle_2 = self.devices[2]['rotation_boundaries'][0]
+        self.nose_coordinates = None                                #координаты конца манипулятора
+        self.length_1 = self.devices[1]['length']                   #длина первого рычага
+        self.length_2 = self.devices[2]['length']                   #длина второго рычага
+        self.angle_0 = None                                         #угол поворота основания
+        self.angle_1 = self.devices[1]['rotation_boundaries'][0]    #degree range of first lever servo
+        self.angle_2 = self.devices[2]['rotation_boundaries'][0]    #degree range of second lever servo
         self.lever_1_end = None
         self.lever_2_end = None
+        # print(self.devices)
 
     def forward_kinematic(self, angle_1, angle_2):
         x = self.length_1 * math.cos(angle_1) + self.length_2 * math.cos(angle_1 + angle_2)
@@ -19,6 +21,18 @@ class Manipulator:
         return x, y
 
     def back_kinematic(self, x: float, y: float) -> tuple[float, float]:
+        """Solve back kinematic problem, set angles in rad and return angles in radians.
+
+        Args:
+            x (float): horizontal coord in vertical palte
+            y (float): vertical coord in vertical palte
+
+        Raises:
+            ValueError: Manipulator can't reach the spot cause it's too far
+
+        Returns:
+            tuple[float, float]: return angles in radians between (basement and lever 1) and (lever 1 and lever 2) 
+        """
         distance = math.sqrt(x ** 2 + y ** 2)
         max_len = self.length_1 + self.length_2
         if distance > max_len:
@@ -34,34 +48,82 @@ class Manipulator:
             self.length_2 * math.sin(self.angle_2), self.length_1 + self.length_2 * math.cos(self.angle_2)
         )
 
-        return math.degrees(self.angle_1), math.degrees(self.angle_2)
+        print("Angle 1 and angle 2: ", math.degrees(self.angle_1), math.degrees(self.angle_2))
+        return (self.angle_1, self.angle_2)
+    
+    # def get_lever_end_pos(self, ):
+        # x_coord = math.cos(self.angle_1) * self.length_1
+        # y_coord = math.sin(self.angle_1) * self.length_1
+
 
     def go_to_destination(self, destination: (float, float, float)) -> None:
-        tan_val = destination[1] / destination[0]
-        plane_projection_rad = math.atan(tan_val)
-        print("Degree of the plane", math.degrees(plane_projection_rad))
+        tan_val = destination[1] / destination[0]   #tav_val of angle plane
+        self.angle_0 = math.atan(tan_val)           #radians of rotate vertical plane
+        print("Degree of the plane", math.degrees(self.angle_0))
 
-        destination_horizontal_projection = math.sqrt(destination[0] ** 2 + destination[1] ** 2)
+        destination_horizontal_projection = math.sqrt(destination[0] ** 2 + destination[1] ** 2)    #projection on horizontal in new vertical plane
         destination_vertical_projection = destination[2]
         print("Spot coords on the plane", destination_horizontal_projection, destination_vertical_projection)
         self.angle_1, self.angle_2 = self.back_kinematic(destination_horizontal_projection, destination_vertical_projection)
-
-        # Compute end of lever 1
+        
+        #compute end of lever 1
         x_coord_1 = math.cos(self.angle_1) * self.length_1
         y_coord_1 = math.sin(self.angle_1) * self.length_1
         self.lever_1_end = (x_coord_1, y_coord_1)
         print("Endpoint of the first lever on the plane", self.lever_1_end)
-
-        # Compute end of lever 2
+        
+        #compute end of lever 2
         x_coord_2 = math.cos(self.angle_1 + self.angle_2) * self.length_2 + x_coord_1
         y_coord_2 = math.sin(self.angle_1 + self.angle_2) * self.length_2 + y_coord_1
         self.lever_2_end = (x_coord_2, y_coord_2)
         print("Endpoint of the second lever on the plane", self.lever_2_end)
-
+        
     def print_current_state(self):
         print(self.lever_1_end)
         print(self.lever_2_end)
         print(self.angle_1, self.angle_2)
+        
+    def draw_all_views(self):
+        fig, axs = plt.subplots(1, 3, figsize=(15, 5))
+
+        # Top View
+        top_view_lever1_length = self.lever_1_end[0] - 0
+        top_view_lever2_length = self.lever_2_end[0] - 0
+        max_range_on_that_height = math.cos(self.angle_0) * (self.length_1 + self.length_2)  #circle that show max manipulator range ot that
+        print("Max range of manipulator on that height: ", max_range_on_that_height)
+        top_xs = [0, math.cos(self.angle_0) * top_view_lever1_length, math.cos(self.angle_0) * top_view_lever2_length]
+        top_ys = [0, math.sin(self.angle_0) * top_view_lever1_length, math.sin(self.angle_0) * top_view_lever2_length]
+        
+        axs[0].set_title("Top View (Horizontal Projection)")
+        axs[0].grid(True)
+        axs[0].set_xlabel("X-axis")
+        axs[0].set_ylabel("Y-axis")
+        circle = plt.Circle((0, 0), max_range_on_that_height, color='red', fill=False)
+        axs[0].add_artist(circle)
+        axs[0].plot(top_xs, top_ys, marker='o')
+
+
+        # Side View
+        axs[1].set_title("Side View")
+        axs[1].grid(True)
+        axs[1].set_xlabel("X-axis")
+        axs[1].set_ylabel("Y-axis")
+        side_xs = [0, self.lever_1_end[0], self.lever_2_end[0]]
+        side_ys = [0, self.lever_1_end[1], self.lever_2_end[1]]
+        axs[1].plot(side_xs, side_ys, marker='o')
+        
+
+        # Front View
+        axs[2].set_title("Front View")
+        axs[2].grid(True)
+        axs[2].set_xlabel("X-axis")
+        axs[2].set_ylabel("Y-axis")
+        front_xs = [0, self.lever_1_end[0] * math.cos(self.angle_0), self.lever_2_end[0] * math.cos(self.angle_0)]
+        front_ys = [0, self.lever_1_end[1], self.lever_2_end[1]]
+        axs[2].plot(front_xs, front_ys, marker='o')
+
+        plt.tight_layout()
+        plt.show()
 
 
 manipulator_parts = [
@@ -91,7 +153,10 @@ manipulator_parts = [
     },
 ]
 
-destination = (50, 40, 30)  # xyz
+destination = (50, 40, 30)  #xyz
 
 manipulator = Manipulator(manipulator_parts)
+# print(manipulator.back_kinematic(40, 70))
 manipulator.go_to_destination(destination)
+manipulator.print_current_state()
+manipulator.draw_all_views()
