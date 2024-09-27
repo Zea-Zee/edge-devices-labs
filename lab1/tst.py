@@ -83,44 +83,74 @@ class Manipulator:
         print(self.lever_2_end)
         print(self.angle_1, self.angle_2)
         
-    def draw_all_views(self):
+    def draw_all_views(self, scale_by_range=False):
         fig, axs = plt.subplots(1, 3, figsize=(15, 5))
+        plt.style.use('dark_background')  # Установите темный фон
 
         # Top View
-        top_view_lever1_length = self.lever_1_end[0] - 0
-        top_view_lever2_length = self.lever_2_end[0] - 0
-        max_range_on_that_height = math.cos(self.angle_0) * (self.length_1 + self.length_2)  #circle that show max manipulator range ot that
+        top_view_lever1_length = self.lever_1_end[0]
+        top_view_lever2_length = self.lever_2_end[0]
+        max_range_on_that_height = math.cos(self.angle_0) * (self.length_1 + self.length_2)
         print("Max range of manipulator on that height: ", max_range_on_that_height)
         top_xs = [0, math.cos(self.angle_0) * top_view_lever1_length, math.cos(self.angle_0) * top_view_lever2_length]
         top_ys = [0, math.sin(self.angle_0) * top_view_lever1_length, math.sin(self.angle_0) * top_view_lever2_length]
-        
-        axs[0].set_title("Top View (Horizontal Projection)")
-        axs[0].grid(True)
-        axs[0].set_xlabel("X-axis")
-        axs[0].set_ylabel("Y-axis")
-        circle = plt.Circle((0, 0), max_range_on_that_height, color='red', fill=False)
-        axs[0].add_artist(circle)
-        axs[0].plot(top_xs, top_ys, marker='o')
 
+        axs[0].set_title("Top View", color='white')
+        axs[0].set_facecolor('#000')  # Цвет фона для графика
+        axs[0].grid(color='white')
+        axs[0].set_xlabel("X", color='white')
+        axs[0].set_ylabel("Y", color='white')
+
+        # Add max range circle for top view
+        circle = plt.Circle((0, 0), max_range_on_that_height, color='red', fill=False, linewidth=2)
+        axs[0].add_artist(circle)
+        axs[0].plot(top_xs, top_ys, marker='o', color='cyan')  # Цвет линий для рычагов
+
+        # Установить пределы для осей
+        if scale_by_range:
+            axs[0].set_xlim(-max_range_on_that_height * 1.1, max_range_on_that_height * 1.1)
+            axs[0].set_ylim(-max_range_on_that_height * 1.1, max_range_on_that_height * 1.1)
 
         # Side View
-        axs[1].set_title("Side View")
-        axs[1].grid(True)
-        axs[1].set_xlabel("X-axis")
-        axs[1].set_ylabel("Y-axis")
+        axs[1].set_title("Plane View", color='white')
+        axs[1].set_facecolor('#000')  # Цвет фона для графика
+        axs[1].grid(color='white')
+        axs[1].set_xlabel("Plane horizontal", color='white')
+        axs[1].set_ylabel("Z", color='white')  # Переименовать ось Y в Z для бокового вида
+        
         side_xs = [0, self.lever_1_end[0], self.lever_2_end[0]]
         side_ys = [0, self.lever_1_end[1], self.lever_2_end[1]]
-        axs[1].plot(side_xs, side_ys, marker='o')
         
+        # Add max range circle for side view
+        max_range_side_view = self.length_1 + self.length_2
+        side_circle = plt.Circle((0, 0), max_range_side_view, color='red', fill=False, linewidth=2)
+        axs[1].add_artist(side_circle)
+        
+        axs[1].plot(side_xs, side_ys, marker='o', color='lime')  # Цвет линий для рычагов
+
+        # Установить пределы для осей
+        if scale_by_range:
+            axs[1].set_xlim(-max_range_side_view * 1.1, max_range_side_view * 1.1)
+            axs[1].set_ylim(-max_range_side_view * 1.1, max_range_side_view * 1.1)
 
         # Front View
-        axs[2].set_title("Front View")
-        axs[2].grid(True)
-        axs[2].set_xlabel("X-axis")
-        axs[2].set_ylabel("Y-axis")
+        axs[2].set_title("Front View", color='white')
+        axs[2].set_facecolor('#000')  # Цвет фона для графика
+        axs[2].grid(color='white')
+        axs[2].set_xlabel("X", color='white')
+        axs[2].set_ylabel("Z", color='white')
+
         front_xs = [0, self.lever_1_end[0] * math.cos(self.angle_0), self.lever_2_end[0] * math.cos(self.angle_0)]
         front_ys = [0, self.lever_1_end[1], self.lever_2_end[1]]
-        axs[2].plot(front_xs, front_ys, marker='o')
+        max_range_on_that_angle = math.cos(self.angle_0) * (self.length_1 + self.length_2)
+        circle = plt.Circle((0, 0), max_range_on_that_angle, color='red', fill=False, linewidth=2)
+        axs[2].add_artist(circle)
+        axs[2].plot(front_xs, front_ys, marker='o', color='magenta')  # Цвет линий для рычагов
+
+        # Установить пределы для осей
+        if scale_by_range:
+            axs[2].set_xlim(-max_range_on_that_angle * 1.1, max_range_on_that_angle * 1.1)
+            axs[2].set_ylim(-max_range_on_that_angle * 1.1, max_range_on_that_angle * 1.1)
 
         plt.tight_layout()
         plt.show()
@@ -159,4 +189,4 @@ manipulator = Manipulator(manipulator_parts)
 # print(manipulator.back_kinematic(40, 70))
 manipulator.go_to_destination(destination)
 manipulator.print_current_state()
-manipulator.draw_all_views()
+manipulator.draw_all_views(True)
